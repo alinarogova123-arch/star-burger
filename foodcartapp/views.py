@@ -2,8 +2,10 @@ import json
 import pprint
 
 from django.http import JsonResponse
+from rest_framework.response import Response
 from django.templatetags.static import static
 from django.shortcuts import get_object_or_404
+from rest_framework.decorators import api_view
 
 
 from .models import Product
@@ -63,9 +65,10 @@ def product_list_api(request):
     })
 
 
+@api_view(['POST'])
 def register_order(request):
-    order = json.loads(request.body.decode())
-    pprint.pprint(order)
+    order = request.data
+    # pprint.pprint(order)
     order_from_db, created = Order.objects.get_or_create(
         address=order.get("address"),
         first_name=order.get("firstname"),
@@ -80,4 +83,4 @@ def register_order(request):
             quantity=product.get("quantity")
             )
 
-    return JsonResponse({})
+    return Response({})

@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'debug_toolbar',
+    "phonenumber_field",
 ]
 
 MIDDLEWARE = [
@@ -74,6 +75,10 @@ TEMPLATES = [
         },
     },
 ]
+
+PHONENUMBER_DEFAULT_REGION = "RU"
+
+PHONENUMBER_DB_FORMAT = "E164"
 
 WSGI_APPLICATION = 'star_burger.wsgi.application'
 

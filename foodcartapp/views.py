@@ -75,12 +75,21 @@ def register_order(request):
         last_name=order.get("lastname"),
         phone_num=order.get("phonenumber"),
     )
-    for product in order.get("products"):
-        product_from_db = get_object_or_404(Product, id=product.get("product"))
-        OrderProduct.objects.get_or_create(
-            order=order_from_db,
-            product=product_from_db,
-            quantity=product.get("quantity")
-            )
 
+    products = order.get("products")
+
+    try:
+        for product in products:
+            product_from_db = get_object_or_404(Product, id=product.get("product"))
+            OrderProduct.objects.get_or_create(
+                order=order_from_db,
+                product=product_from_db,
+                quantity=product.get("quantity")
+                )
+    except Exception as e:
+        error = {"error": str(e)}
+        return Response(error)
+    if not products:
+        error = {"error": "products is empty"}
+        return Response(error)
     return Response({})

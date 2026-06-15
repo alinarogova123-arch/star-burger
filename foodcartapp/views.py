@@ -11,6 +11,7 @@ from rest_framework.serializers import ModelSerializer
 from rest_framework.serializers import ValidationError
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from rest_framework.renderers import JSONRenderer
 
 from .models import Product
 from .models import Order
@@ -76,29 +77,25 @@ class OrderProductSerializer(ModelSerializer):
 
 
 class OrderSerializer(ModelSerializer):
-    products = OrderProductSerializer(many=True, allow_empty=False)
+    products = OrderProductSerializer(many=True, allow_empty=False, write_only=True)
 
     class Meta:
         model = Order
-        fields = ['address', 'firstname', 'lastname', 'phonenumber', 'products']
+        fields = ['id', 'address', 'firstname', 'lastname', 'phonenumber', 'products']
 
 
 @api_view(['POST'])
 def register_order(request):
     serializer = OrderSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
-
     order = serializer.validated_data
-
     order_from_db, created = Order.objects.get_or_create(
         address=order.get("address"),
         firstname=order.get("firstname"),
         lastname=order.get("lastname"),
         phonenumber=order.get("phonenumber"),
     )
-
     products = order.get("products")
-
     for product in products:
         product_from_db = product.get("product")
         OrderProduct.objects.get_or_create(
@@ -106,6 +103,5 @@ def register_order(request):
             product=product_from_db,
             quantity=product.get("quantity")
             )
-
-
-    return Response({})
+    content = OrderSerializer(order_from_db).data
+    return Response(content)

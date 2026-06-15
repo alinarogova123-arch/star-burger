@@ -6,6 +6,7 @@ from rest_framework.response import Response
 from django.templatetags.static import static
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
+import phonenumbers
 
 
 from .models import Product
@@ -68,12 +69,31 @@ def product_list_api(request):
 @api_view(['POST'])
 def register_order(request):
     order = request.data
-    # pprint.pprint(order)
+    address = order.get("address")
+    first_name = order.get("firstname")
+    last_name = order.get("lastname")
+    phone_num = order.get("phonenumber")
+    if not isinstance(first_name, str):
+        return Response({"firstname": "Not a valid string."})
+    if not first_name:
+        return Response({"firstname": "Это поле не может быть пустым."})
+    if not address:
+        return Response({"address": "Это поле не может быть пустым."})
+    if not last_name:
+        return Response({"lastname": "Это поле не может быть пустым."})
+    if not phone_num:
+        return Response({"phonenumber": "Это поле не может быть пустым."})
+    phone_num = phonenumbers.parse(phone_num, None)
+    if not phonenumbers.is_possible_number(phone_num):
+        return Response({"phonenumber": "Неверный формат номера"})
+    if not phonenumbers.is_valid_number(phone_num):
+        return Response({"phonenumber": "Неверный формат номера"})
+
     order_from_db, created = Order.objects.get_or_create(
-        address=order.get("address"),
-        first_name=order.get("firstname"),
-        last_name=order.get("lastname"),
-        phone_num=order.get("phonenumber"),
+        address=address,
+        first_name=first_name,
+        last_name=last_name,
+        phone_num=phone_num,
     )
 
     products = order.get("products")

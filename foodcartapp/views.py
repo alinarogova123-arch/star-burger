@@ -1,13 +1,16 @@
 import json
 import pprint
 
-from django.http import JsonResponse
-from rest_framework.response import Response
-from django.templatetags.static import static
-from django.shortcuts import get_object_or_404
-from rest_framework.decorators import api_view
 import phonenumbers
 
+from django.http import JsonResponse
+from django.templatetags.static import static
+from django.shortcuts import get_object_or_404
+
+from rest_framework.serializers import ModelSerializer
+from rest_framework.serializers import ValidationError
+from rest_framework.response import Response
+from rest_framework.decorators import api_view
 
 from .models import Product
 from .models import Order
@@ -66,50 +69,43 @@ def product_list_api(request):
     })
 
 
+class OrderProductSerializer(ModelSerializer):
+    class Meta:
+        model = OrderProduct
+        fields = ['product', 'quantity']
+
+
+class OrderSerializer(ModelSerializer):
+    products = OrderProductSerializer(many=True, allow_empty=False)
+
+    class Meta:
+        model = Order
+        fields = ['address', 'firstname', 'lastname', 'phonenumber', 'products']
+
+
 @api_view(['POST'])
 def register_order(request):
-    order = request.data
-    address = order.get("address")
-    first_name = order.get("firstname")
-    last_name = order.get("lastname")
-    phone_num = order.get("phonenumber")
-    if not isinstance(first_name, str):
-        return Response({"firstname": "Not a valid string."})
-    if not first_name:
-        return Response({"firstname": "Это поле не может быть пустым."})
-    if not address:
-        return Response({"address": "Это поле не может быть пустым."})
-    if not last_name:
-        return Response({"lastname": "Это поле не может быть пустым."})
-    if not phone_num:
-        return Response({"phonenumber": "Это поле не может быть пустым."})
-    phone_num = phonenumbers.parse(phone_num, None)
-    if not phonenumbers.is_possible_number(phone_num):
-        return Response({"phonenumber": "Неверный формат номера"})
-    if not phonenumbers.is_valid_number(phone_num):
-        return Response({"phonenumber": "Неверный формат номера"})
+    serializer = OrderSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
+
+    order = serializer.validated_data
 
     order_from_db, created = Order.objects.get_or_create(
-        address=address,
-        first_name=first_name,
-        last_name=last_name,
-        phone_num=phone_num,
+        address=order.get("address"),
+        firstname=order.get("firstname"),
+        lastname=order.get("lastname"),
+        phonenumber=order.get("phonenumber"),
     )
 
     products = order.get("products")
 
-    try:
-        for product in products:
-            product_from_db = get_object_or_404(Product, id=product.get("product"))
-            OrderProduct.objects.get_or_create(
-                order=order_from_db,
-                product=product_from_db,
-                quantity=product.get("quantity")
-                )
-    except Exception as e:
-        error = {"error": str(e)}
-        return Response(error)
-    if not products:
-        error = {"error": "products is empty"}
-        return Response(error)
+    for product in products:
+        product_from_db = product.get("product")
+        OrderProduct.objects.get_or_create(
+            order=order_from_db,
+            product=product_from_db,
+            quantity=product.get("quantity")
+            )
+
+
     return Response({})

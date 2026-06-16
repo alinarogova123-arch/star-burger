@@ -174,6 +174,13 @@ class OrderProduct(models.Model):
         verbose_name='продукт',
     )
     quantity = models.IntegerField()
+    cost = models.DecimalField(
+        'стоимость',
+        max_digits=8,
+        decimal_places=2,
+        validators=[MinValueValidator(0)]
+    )
+
 
     class Meta:
         verbose_name = 'продукт в заказе'

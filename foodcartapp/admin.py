@@ -2,6 +2,8 @@ from django.contrib import admin
 from django.shortcuts import reverse
 from django.templatetags.static import static
 from django.utils.html import format_html
+from django.utils.http import url_has_allowed_host_and_scheme
+from django.shortcuts import redirect
 
 from .models import Product
 from .models import ProductCategory
@@ -117,3 +119,16 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [
         OrderProductInline
     ]
+
+    def response_change(self, request, obj):
+        res = super().response_change(request, obj)
+        next_url = request.POST.get('next') or request.GET.get('next')       
+        if next_url:
+            is_safe = url_has_allowed_host_and_scheme(
+                url=next_url,
+                allowed_hosts={request.get_host()},
+                require_https=request.is_secure()
+            )
+            if is_safe:
+                return redirect(next_url)
+        return res

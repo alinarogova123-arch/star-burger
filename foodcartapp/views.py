@@ -85,6 +85,7 @@ class OrderSerializer(ModelSerializer):
 
 
 @api_view(['POST'])
+@transaction.atomic
 def register_order(request):
     serializer = OrderSerializer(data=request.data)
     serializer.is_valid(raise_exception=True)
@@ -101,7 +102,8 @@ def register_order(request):
         OrderProduct.objects.get_or_create(
             order=order_from_db,
             product=product_from_db,
-            quantity=product.get("quantity")
-            )
+            quantity=product.get("quantity"),
+            cost=product.get("quantity") * product_from_db.price
+        )
     content = OrderSerializer(order_from_db).data
     return Response(content)

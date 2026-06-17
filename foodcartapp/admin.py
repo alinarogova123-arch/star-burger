@@ -119,6 +119,7 @@ class OrderAdmin(admin.ModelAdmin):
     inlines = [
         OrderProductInline
     ]
+    list_display = ['firstname', 'lastname', 'status', 'address', 'phonenumber']
 
     def response_change(self, request, obj):
         res = super().response_change(request, obj)

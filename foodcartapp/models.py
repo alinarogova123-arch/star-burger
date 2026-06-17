@@ -127,7 +127,9 @@ class RestaurantMenuItem(models.Model):
 
 class OrderQuerySet(models.QuerySet):
     def price(self):
-        return self.annotate(price=Sum(F('products__product__price') * F('products__quantity')))
+        return self.exclude(status='done').annotate(
+            price=Sum(F('products__product__price') * F('products__quantity'))
+        )
 
 
 class Order(models.Model):
@@ -149,6 +151,17 @@ class Order(models.Model):
     phonenumber = PhoneNumberField(
         region="RU",
         verbose_name='номер телефона',
+    )
+    status = models.CharField(
+        max_length=20,
+        db_index=True,
+        choices=(
+            ('new', 'Необработанный'),
+            ('cook', 'В сборке'),
+            ('delivery', 'В пути'),
+            ('done', 'Доставлен'),
+        ),
+        default='new',
     )
     objects = OrderQuerySet.as_manager()
 

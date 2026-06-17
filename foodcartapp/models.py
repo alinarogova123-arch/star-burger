@@ -156,6 +156,7 @@ class Order(models.Model):
     status = models.CharField(
         max_length=20,
         db_index=True,
+        verbose_name='Статус',
         choices=(
             ('new', 'Необработанный'),
             ('cook', 'В сборке'),
@@ -163,6 +164,16 @@ class Order(models.Model):
             ('done', 'Доставлен'),
         ),
         default='new',
+    )
+    pay_method = models.CharField(
+        max_length=20,
+        db_index=True,
+        verbose_name='Способ оплаты',
+        choices=(
+            ('online', 'Онлайн'),
+            ('cash', 'наличными'),
+        ),
+        default='cash',
     )
     comment = models.TextField(verbose_name='Комментарий', blank=True)
     created_at = models.DateTimeField(blank=True, null=True, default=timezone.now, db_index=True,)

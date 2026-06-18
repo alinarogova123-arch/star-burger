@@ -1,3 +1,9 @@
+import re
+
+import requests
+from geopy import distance
+
+from django.conf import settings
 from django import forms
 from django.shortcuts import redirect, render
 from django.views import View
@@ -6,7 +12,6 @@ from django.contrib.auth.decorators import user_passes_test
 
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
-from django.db.models import Case, Value, When
 
 from foodcartapp.models import Product, Restaurant, Order, RestaurantMenuItem
 
@@ -90,30 +95,66 @@ def view_restaurants(request):
     })
 
 
+def fetch_coordinates(apikey, address):
+    base_url = "https://geocode-maps.yandex.ru/1.x"
+    response = requests.get(base_url, params={
+        "geocode": address,
+        "apikey": apikey,
+        "format": "json",
+    })
+    response.raise_for_status()
+    found_places = response.json()['response']['GeoObjectCollection']['featureMember']
+
+    if not found_places:
+        return None
+
+    most_relevant = found_places[0]
+    lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
+    return lon, lat
+
+
 @user_passes_test(is_manager, login_url='restaurateur:login')
 def view_orders(request):
-    orders = Order.objects.all().price().prefetch_related('products').annotate(
-        status_order=Case(
-            When(status='new', then=Value(1)),
-            When(status='cook', then=Value(2)),
-            When(status='delivery', then=Value(3)),
-            When(status='done', then=Value(4)),
-        )
-    ).order_by('status_order')
+    yandex_api_key = settings.YANDEX_API_KEY
+    orders = Order.objects.all().price().prefetch_related('products').status_order()
     restaurants = Restaurant.objects.all().prefetch_related('menu_items')
 
     for order in orders:
         available_restaurants = []
+        try:
+            order_lon, order_lat = fetch_coordinates(yandex_api_key, order.address)
+            order_coordinates = (order_lat, order_lon)
+        except TypeError:
+            order_coordinates = None
         products_in_order = order.products.values_list('product_id', flat=True)
         for restaurant in restaurants:
+            try:
+                restaurant_lon, restaurant_lat = fetch_coordinates(
+                    yandex_api_key,
+                    restaurant.address
+                )
+                restaurant_coordinates = (restaurant_lat, restaurant_lon)
+            except TypeError:
+                restaurant_coordinates = None
+            if order_coordinates and restaurant_coordinates:
+                distance_to_restaurant = f"{distance.distance(
+                    order_coordinates,
+                    restaurant_coordinates
+                ).km:.4f} км"
+            else:
+                distance_to_restaurant = "Не удалось определить расстояние"
             products_in_restaurant = restaurant.menu_items.filter(availability=True).values_list(
                 'product_id', flat=True
             )
             if set(products_in_order).issubset(set(products_in_restaurant)):
-                available_restaurants.append(restaurant.name)
+                available_restaurants.append(f"{restaurant.name} - {distance_to_restaurant}")
+            if order_coordinates and restaurant_coordinates:
+                available_restaurants = sorted(
+                    available_restaurants,
+                    key=lambda x: int(re.search(r'\d+', x).group())
+                )
         order.available_restaurants = available_restaurants
 
     return render(request, template_name='order_items.html', context={
         "order_items": orders,
     })
-

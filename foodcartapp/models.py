@@ -179,6 +179,14 @@ class Order(models.Model):
     created_at = models.DateTimeField(blank=True, null=True, default=timezone.now, db_index=True,)
     called_at = models.DateTimeField(blank=True, null=True, db_index=True,)
     delivery_at = models.DateTimeField(blank=True, null=True, db_index=True,)
+    restaurant = models.ForeignKey(
+        Restaurant,
+        related_name='orders',
+        verbose_name="ресторан",
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+    )
     objects = OrderQuerySet.as_manager()
 
     class Meta:

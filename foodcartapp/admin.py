@@ -11,6 +11,11 @@ from .models import Restaurant
 from .models import RestaurantMenuItem
 from .models import Order
 from .models import OrderProduct
+from locations.models import Location
+from django.utils import timezone
+import requests
+from django.conf import settings
+from .helpers_function import fetch_coordinates
 
 
 class RestaurantMenuItemInline(admin.TabularInline):
@@ -133,3 +138,22 @@ class OrderAdmin(admin.ModelAdmin):
             if is_safe:
                 return redirect(next_url)
         return res
+
+
+    def save_model(self, request, obj, form, change):
+        yandex_api_key = settings.YANDEX_API_KEY
+        super().save_model(request, obj, form, change)
+
+        coordinates = fetch_coordinates(yandex_api_key, obj.address)
+        if coordinates:
+            location_lon, location_lat = coordinates
+        else:
+            location_lon, location_lat = None, None
+        Location.objects.get_or_create(
+            address=obj.address,
+            defaults={
+                'lon': location_lon,
+                'lat': location_lat,
+                'request_at': timezone.now(),
+            }
+        )

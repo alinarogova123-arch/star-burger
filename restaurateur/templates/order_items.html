@@ -39,7 +39,7 @@
           <td>Готовит {{ item.restaurant }}</td>
         {% else %}
           <td>
-            <details style="border: 1px solid #e5e7eb;">
+            <details style="border: 3px solid #e5e7eb;">
               <summary style="display: list-item; cursor: pointer;">Рестораны</summary>
               Может быть приготовлен ресторанами:
               {% for restaurant in item.available_restaurants %}

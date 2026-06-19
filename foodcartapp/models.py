@@ -188,9 +188,24 @@ class Order(models.Model):
         default='cash',
     )
     comment = models.TextField(verbose_name='Комментарий', blank=True)
-    created_at = models.DateTimeField(blank=True, null=True, default=timezone.now, db_index=True,)
-    called_at = models.DateTimeField(blank=True, null=True, db_index=True,)
-    delivery_at = models.DateTimeField(blank=True, null=True, db_index=True,)
+    created_at = models.DateTimeField(
+        verbose_name='Заказ создан',
+        blank=True,
+        null=True,
+        default=timezone.now,
+        db_index=True,)
+    called_at = models.DateTimeField(
+        verbose_name='Звонок покупателю',
+        blank=True,
+        null=True,
+        db_index=True,
+    )
+    delivery_at = models.DateTimeField(
+        verbose_name='Передан в доставку',
+        blank=True,
+        null=True,
+        db_index=True,
+    )
     restaurant = models.ForeignKey(
         Restaurant,
         related_name='orders',

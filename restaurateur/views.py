@@ -12,8 +12,10 @@ from django.contrib.auth.decorators import user_passes_test
 
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
+from django.shortcuts import get_object_or_404
 
 from foodcartapp.models import Product, Restaurant, Order, RestaurantMenuItem
+from locations.models import Location
 
 
 class Login(forms.Form):
@@ -118,29 +120,17 @@ def view_orders(request):
     yandex_api_key = settings.YANDEX_API_KEY
     orders = Order.objects.all().price().prefetch_related('products').status_order()
     restaurants = Restaurant.objects.all().prefetch_related('menu_items')
-
     for order in orders:
         available_restaurants = []
-        try:
-            order_lon, order_lat = fetch_coordinates(yandex_api_key, order.address)
-            order_coordinates = (order_lat, order_lon)
-        except TypeError:
-            order_coordinates = None
+        order_coordinates = Location.objects.filter(address=order.address).first()
         products_in_order = order.products.values_list('product_id', flat=True)
         for restaurant in restaurants:
-            try:
-                restaurant_lon, restaurant_lat = fetch_coordinates(
-                    yandex_api_key,
-                    restaurant.address
-                )
-                restaurant_coordinates = (restaurant_lat, restaurant_lon)
-            except TypeError:
-                restaurant_coordinates = None
-            if order_coordinates and restaurant_coordinates:
+            restaurant_coordinates = Location.objects.filter(address=restaurant.address).first()
+            if order_coordinates.lat and restaurant_coordinates.lat:
                 distance_to_restaurant = f"{distance.distance(
-                    order_coordinates,
-                    restaurant_coordinates
-                ).km:.4f} км"
+                    (order_coordinates.lat, order_coordinates.lon),
+                    (restaurant_coordinates.lat, restaurant_coordinates.lon),
+                ).km:.3f} км"
             else:
                 distance_to_restaurant = "Не удалось определить расстояние"
             products_in_restaurant = restaurant.menu_items.filter(availability=True).values_list(
@@ -148,7 +138,7 @@ def view_orders(request):
             )
             if set(products_in_order).issubset(set(products_in_restaurant)):
                 available_restaurants.append(f"{restaurant.name} - {distance_to_restaurant}")
-            if order_coordinates and restaurant_coordinates:
+            if order_coordinates.lat and restaurant_coordinates.lat:
                 available_restaurants = sorted(
                     available_restaurants,
                     key=lambda x: int(re.search(r'\d+', x).group())

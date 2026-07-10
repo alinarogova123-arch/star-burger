@@ -204,6 +204,42 @@ cd /opt
 - `ROLLBAR_ACCESS_TOKEN` - API токен Роллбар.
 - `ROLLBAR_ENVIRONMENT` - Режим разработки/запуска сайта.
 
+## Запуск dev-версии через docker
+
+Docker должен быть уже установлен.
+
+Задайте в файле `.env` переменную окружения `DB_URL` и укажите следующее значение:
+
+```
+DB_URL=postgresql://burger_user:burger_password@db:5432/starburger
+```
+
+Запустите контейнеры:
+
+```
+docker compose up -d
+```
+
+Примените миграции:
+
+```
+docker compose exec backend python manage.py migrate
+```
+
+Создать суперпользователя Django можно следующей командой:
+
+```
+docker compose exec backend python manage.py createsuperuser
+```
+
+Ваш сайт будет на странице http://localhost:8000
+
+Остановить сайт можно командой:
+
+```
+docker compose down
+```
+
 ## Цели проекта
 
 Код написан в учебных целях — это урок в курсе по Python и веб-разработке на сайте [Devman](https://dvmn.org). За основу был взят код проекта [FoodCart](https://github.com/Saibharath79/FoodCart).

@@ -214,6 +214,8 @@ Docker должен быть уже установлен.
 DB_URL=postgresql://burger_user:burger_password@db:5432/starburger
 ```
 
+Перейдите в директорию проекта в вашей CLI.
+
 Запустите контейнеры:
 
 ```

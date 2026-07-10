@@ -208,9 +208,10 @@ cd /opt
 
 Docker должен быть уже установлен.
 
-Задайте в файле `.env` переменную окружения `DB_URL` и укажите следующее значение:
+Задайте в файле `.env` переменные окружения `DB_URL`, `SECRET_KEY` и укажите следующие значения:
 
 ```
+SECRET_KEY=django-insecure-0if40nf4nf93n4
 DB_URL=postgresql://burger_user:burger_password@db:5432/starburger
 ```
 

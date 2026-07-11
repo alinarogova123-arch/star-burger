@@ -242,6 +242,99 @@ docker compose exec backend python manage.py createsuperuser
 docker compose down
 ```
 
+## Запуск prod-версии через Docker.
+
+Docker, git, nginx должны быть уже установлены на вашем сервере.
+
+Скачайте репозиторий на свой сервер.
+
+Перейдите в директорию вашего проекта и создайте файл .env со следующими переменными:
+
+```
+SECRET_KEY=Ключ_сайта.
+YANDEX_API_KEY=Токен_яндекс.
+ROLLBAR_ACCESS_TOKEN=токен_роллбар.
+ROLLBAR_ENVIRONMENT=production / режим_работы_сайта
+DB_NAME=Имя_базы_данных
+DB_USER=Имя_пользователя_базы_данных
+DB_PASSWORD=Пароль_пользователя_базы_данных
+DB_URL=postgresql://Имя_пользователя_базы_данных:Пароль_пользователя_базы_данных@db:5432/Имя_базы_данных
+ALLOWED_HOSTS=IP_адресс_сервера_и_или_домен
+DEBUG=False / режим_откладки
+```
+
+Создайте конфиг-файл:
+
+```
+nano /etc/nginx/sites-available/ваш_домен
+```
+Можно использовать следующий шаблон:
+
+```
+server {
+    listen 80;
+    server_name домен-или-IP-сервера;
+
+    location /static/ {
+        alias /var/lib/docker/volumes/имя-директории-с-вашим-проектом_prod_static_assets/_data/;
+    }
+
+    location /media/ {
+        alias /var/lib/docker/volumes/имя-директории-с-вашим-проектом_prod_media_assets/_data/;
+    }
+
+    location / {
+        include proxy_params;
+        proxy_pass http://127.0.0.1:8000;
+    }
+}
+```
+
+Включите сайт:
+
+```
+ln -s /etc/nginx/sites-available/star-burger /etc/nginx/sites-enabled/
+```
+
+Удалите лишнее:
+
+```
+rm /etc/nginx/sites-enabled/default
+```
+
+Сделайте скрипт исполняемым:
+
+```
+chmod +x deploy.sh
+```
+
+Запустите деплой:
+
+```
+./deploy.sh
+```
+
+Если сервер убивает процесс сборки при выполнении команды `npm ci`, создайте файл подкачки на 2 или 4 гб.
+
+Если возникнут ошибки при миграции, выполните команды:
+
+```
+docker compose -f docker-compose.prod.yaml exec backend python manage.py makemigrations --merge
+docker compose -f docker-compose.prod.yaml exec backend python manage.py migrate
+docker compose -f docker-compose.prod.yaml exec backend python manage.py collectstatic --noinput
+```
+
+Установите следующие права доступа для nginx:
+
+```
+chmod +x /var/lib/docker
+chmod +x /var/lib/docker/volumes
+chmod -R 755 /var/lib/docker/volumes/имя-директории-с-вашим-проектом_prod_static_assets
+chmod -R 755 /var/lib/docker/volumes/имя-директории-с-вашим-проектом_prod_media_assets
+```
+
+Переходите на ваш сайт по домену или IP_адресу.
+
 ## Цели проекта
 
 Код написан в учебных целях — это урок в курсе по Python и веб-разработке на сайте [Devman](https://dvmn.org). За основу был взят код проекта [FoodCart](https://github.com/Saibharath79/FoodCart).

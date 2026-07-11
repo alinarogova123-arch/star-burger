@@ -35,9 +35,6 @@ services:
     env_file:
       - .env
     environment:
-      - DB_HOST=db
-      - DB_NAME=starburger
-      - DB_USER=burger_user
       - DB_URL=postgresql://burger_user:burger_password@db:5432/starburger
     depends_on:
       - db

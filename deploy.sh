@@ -3,7 +3,7 @@ set -e
 
 echo "=== Start ==="
 
-git pull
+git pull origin master
 
 docker compose -f docker-compose.prod.yaml up --build -d
 

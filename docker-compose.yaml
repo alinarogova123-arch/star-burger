@@ -14,21 +14,23 @@ services:
 
   frontend:
     build:
-      context: .
+      context: ./frontend
       dockerfile: Dockerfile.frontend
     volumes:
-      - .:/app
+      - ./frontend:/app
       - /app/node_modules
     depends_on:
       - db
 
   backend:
     build:
-      context: .
+      context: ./backend
       dockerfile: Dockerfile
     command: python manage.py runserver 0.0.0.0:8000
     volumes:
-      - .:/app
+      - ./backend:/app
+      - ./frontend/bundles:/app/bundles
+      - ./frontend/assets:/app/assets
       - media_caravan:/app/media
     ports:
       - "8000:8000"

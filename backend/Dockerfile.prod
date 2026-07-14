@@ -1,8 +1,8 @@
 FROM node:16.16.0-slim AS frontend-builder
 WORKDIR /app
-COPY package*.json /app/
+COPY frontend/package*.json /app/
 RUN npm ci
-COPY . /app/
+COPY frontend/ /app/
 RUN ./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
 
 FROM python:3.11-slim
@@ -15,11 +15,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY requirements.txt /app/
+COPY backend/requirements.txt /app/
 RUN pip install --no-cache-dir --upgrade pip \
     && pip install --no-cache-dir -r requirements.txt
 
-COPY . /app/
+COPY backend/ /app/
 
 COPY --from=frontend-builder /app/bundles /app/bundles
 
